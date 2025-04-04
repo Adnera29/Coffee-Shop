@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details | Coffee Haven</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .order-form, .payment-section {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .order-form input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .payment-btn {
+            background: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+        .payment-btn:hover {
+            background: #4cae4c;
+        }
+        #backToMenu {
+            background: #d9534f;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+        }
+        #backToMenu:hover {
+            background: #c9302c;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header>
+        <div class="logo">Coffee Haven</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="menu.html">Menu</a></li>
+                <li><a href="login.html">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Customer Details Form -->
+    <section class="order-form">
+        <h2>Customer Details</h2>
+        <form id="customerForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" required placeholder="Enter your full name">
+
+            <label for="contact">Contact:</label>
+            <input type="text" id="contact" required placeholder="Enter your phone number">
+
+            <button type="button" id="makePayment" onclick="showPaymentOptions()">Make Payment</button>
+            <a href="menu.html" id="backToMenu">Back to Menu</a>
+        </form>
+    </section>
+
+    <!-- Payment Options -->
+    <section class="payment-section" id="paymentSection" style="display:none;">
+        <h2>Payment Options</h2>
+        <p><strong>Name:</strong> <span id="custName"></span></p>
+        <p><strong>Contact:</strong> <span id="custContact"></span></p>
+        <p><strong>Total Amount:</strong> ₹<span id="orderTotal"></span></p>
+
+        <button class="payment-btn" onclick="confirmOrder('cash')">Cash</button>
+        <button class="payment-btn" onclick="confirmOrder('online')">Online</button>
+
+        <p id="orderMessage" style="font-weight: bold; margin-top: 10px;"></p>
+    </section>
+
+    <script>
+        let cart = JSON.parse(sessionStorage.getItem("cart")) || [];
+        let total = sessionStorage.getItem("total") || 0;
+
+        function showPaymentOptions() {
+            let name = document.getElementById("name").value.trim();
+            let contact = document.getElementById("contact").value.trim();
+
+            if (!name || !contact) {
+                alert("Please enter your details.");
+                return;
+            }
+
+            if (!/^\d{10}$/.test(contact)) {
+                alert("Please enter a valid 10-digit phone number.");
+                return;
+            }
+
+            document.getElementById("custName").innerText = name;
+            document.getElementById("custContact").innerText = contact;
+            document.getElementById("orderTotal").innerText = parseFloat(total).toFixed(2);
+
+            document.getElementById("paymentSection").style.display = "block";
+        }
+
+        function confirmOrder(paymentMethod) {
+            let name = document.getElementById("name").value.trim();
+            let contact = document.getElementById("contact").value.trim();
+
+            if (!name || !contact) {
+                alert("Please enter your details.");
+                return;
+            }
+
+            let products = cart.map(item => `${item.item} - ₹${item.price}`).join(", ");
+
+            let formData = new FormData();
+            formData.append("name", name);
+            formData.append("contact", contact);
+            formData.append("products", products);
+            formData.append("total", total);
+            formData.append("payment_mode", paymentMethod);
+
+            fetch("place_order.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+                document.getElementById("orderMessage").innerText = 
+                    paymentMethod === "cash" ? "Order placed" : "Payment successful and Order placed";
+
+                sessionStorage.removeItem("cart");
+                sessionStorage.removeItem("total");
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+
+</body>
+</html>
